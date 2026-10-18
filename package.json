@@ -1,0 +1,39 @@
+{
+  "name": "canteen-payment-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cashless canteen payment & digital student ID system (Next.js + MySQL)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "seed": "node scripts/seed.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "db:start": "node scripts/local-db.mjs start",
+    "db:stop": "node scripts/local-db.mjs stop",
+    "db:status": "node scripts/local-db.mjs status"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
+    "jose": "^5.9.6",
+    "jspdf": "^2.5.2",
+    "mysql2": "^3.11.5",
+    "next": "^15.4.5",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

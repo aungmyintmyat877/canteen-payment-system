@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* html5-qrcode injects its own video element — keep it neat */
+#qr-reader {
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 4px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+#qr-reader video {
+  width: 100% !important;
+  border-radius: 0.6rem;
+}
+#qr-reader__dashboard_section_swaplink {
+  display: none;
+}
