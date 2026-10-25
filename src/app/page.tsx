@@ -1,64 +1,69 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession, homeFor } from "@/lib/auth";
-import { UNIVERSITY_NAME } from "@/lib/site";
+import { requireActiveStudent } from "@/lib/auth";
+import { buildQrPayload } from "@/lib/qr";
+import { formatMoney } from "@/lib/money";
+import StudentQr from "@/components/StudentQr";
+import T from "@/lib/i18n/T";
 
 export const dynamic = "force-dynamic";
 
-export default async function LandingPage() {
-  const session = await getSession();
-  if (session) redirect(homeFor(session.role));
+export default async function StudentHomePage() {
+  let student;
+  try {
+    student = await requireActiveStudent();
+  } catch {
+    return (
+      <p className="rounded-2xl bg-red-50 border border-red-200 p-6 text-red-700">
+        <T k="student.blocked" />
+      </p>
+    );
+  }
 
-  const features = [
-    {
-      title: "Students",
-      body: "Check your balance, show your signed payment QR, download a printable student ID card, and browse your full transaction history.",
-    },
-    {
-      title: "Cashier Terminal",
-      body: "Scan a student's QR with the camera, verify their photo, take cash or PIN-authorized payments. Double-charge-proof by design.",
-    },
-    {
-      title: "Admin Dashboard",
-      body: "Daily summaries, a full audit trail of who did what, and safe refunds that never rewrite history.",
-    },
-  ];
+  const payload = buildQrPayload(student.id, student.qr_secret);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-800 via-blue-700 to-indigo-900 text-white">
-      <div className="mx-auto max-w-5xl px-6 py-20">
-        <p className="text-blue-200 font-semibold tracking-wide text-sm uppercase">
-          {UNIVERSITY_NAME}
+    <div className="grid gap-6 md:grid-cols-2">
+      <section className="flex flex-col rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white shadow-lg">
+        <p className="text-sm font-medium text-blue-200">
+          <T k="student.balance" />
         </p>
-        <h1 className="mt-3 text-4xl md:text-5xl font-extrabold leading-tight">
-          Canteen Payment &amp; Student ID System
-        </h1>
-        <p className="mt-4 max-w-2xl text-blue-100 text-lg">
-          Cashless canteen payments with HMAC-signed QR passes, a locked and
-          idempotent MySQL ledger, and printable digital ID cards.
+        <p className="mt-1 text-5xl font-extrabold tracking-tight">
+          {formatMoney(student.balance)}
+        </p>
+        <p className="mt-8 text-lg font-semibold">{student.name}</p>
+        <p className="text-sm text-blue-200">
+          {student.id} · <T k="student.year" /> {student.year}
+          {student.major ? ` · ${student.major}` : ""}
         </p>
 
-        <div className="mt-8 flex gap-3">
+        <div className="mt-auto flex gap-3 pt-8">
           <Link
-            href="/login"
-            className="rounded-xl bg-white px-6 py-3 font-semibold text-blue-800 shadow hover:bg-blue-50"
+            href="/student/id-card"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
           >
-            Sign in
+            <T k="student.idcard" />
+          </Link>
+          <Link
+            href="/student/transactions"
+            className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10"
+          >
+            <T k="student.history" />
           </Link>
         </div>
+      </section>
 
-        <div className="mt-16 grid gap-4 md:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl bg-white/10 backdrop-blur p-6 border border-white/15"
-            >
-              <h2 className="font-bold text-lg">{f.title}</h2>
-              <p className="mt-2 text-sm text-blue-100 leading-relaxed">{f.body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </main>
+      <section className="rounded-2xl bg-white p-8 text-center shadow">
+        <h2 className="text-lg font-bold">
+          <T k="student.myqr" />
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          <T k="student.qrHint" />
+        </p>
+        <StudentQr payload={payload} />
+        <p className="mt-4 text-xs text-slate-400">
+          <T k="student.qrNote" />
+        </p>
+      </section>
+    </div>
   );
 }

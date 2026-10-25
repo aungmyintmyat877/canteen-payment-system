@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Html5Qrcode } from "html5-qrcode";
+import { useLang } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Camera QR scanner built on html5-qrcode. Loads the library dynamically so
@@ -15,6 +16,7 @@ export default function QRScanner({
   onResult: (text: string) => void;
   paused: boolean;
 }) {
+  const { t } = useLang();
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +50,7 @@ export default function QRScanner({
     } catch (e) {
       scannerRef.current = null;
       const msg = e instanceof Error ? e.message : "unknown error";
-      setError(
-        `Camera unavailable (${msg}). Allow camera access, or use manual entry below.`
-      );
+      setError(`${t("scanner.cameraUnavailable")} (${msg}). ${t("scanner.cameraHint")}`);
       setRunning(false);
     }
   }
@@ -91,7 +91,7 @@ export default function QRScanner({
             onClick={start}
             className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            Start camera
+            {t("scanner.start")}
           </button>
         ) : (
           <button
@@ -99,7 +99,7 @@ export default function QRScanner({
             onClick={stop}
             className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300"
           >
-            Stop camera
+            {t("scanner.stop")}
           </button>
         )}
       </div>

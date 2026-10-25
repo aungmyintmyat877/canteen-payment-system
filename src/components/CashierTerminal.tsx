@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import QRScanner from "@/components/QRScanner";
 import PinPad from "@/components/PinPad";
 import { formatMoney, parseMajorToMinor } from "@/lib/money";
+import { useLang } from "@/lib/i18n/LanguageProvider";
 
 interface ScannedStudent {
   id: string;
@@ -43,6 +44,7 @@ export default function CashierTerminal({
   cashierName: string;
   allowManual: boolean;
 }) {
+  const { t } = useLang();
   const [student, setStudent] = useState<ScannedStudent | null>(null);
   const studentRef = useRef<StudentRef>({});
   const [mode, setMode] = useState<Mode>("topup");
@@ -82,13 +84,13 @@ export default function CashierTerminal({
       });
       const data = await res.json();
       if (!res.ok) {
-        addLog("err", data?.error?.message ?? "Scan failed.");
+        addLog("err", data?.error?.message ?? t("cashier.scanFailed"));
         return;
       }
       studentRef.current = { payload };
       applyStudent(data.student, data.via === "manual");
     } catch {
-      addLog("err", "Network error while verifying the QR code.");
+      addLog("err", t("cashier.networkScan"));
     } finally {
       setScanning(false);
     }
@@ -107,13 +109,13 @@ export default function CashierTerminal({
       });
       const data = await res.json();
       if (!res.ok) {
-        addLog("err", data?.error?.message ?? "Lookup failed.");
+        addLog("err", data?.error?.message ?? t("cashier.lookupFailed"));
         return;
       }
       studentRef.current = { studentId: id, manual: true };
       applyStudent(data.student, true);
     } catch {
-      addLog("err", "Network error while looking up the student.");
+      addLog("err", t("cashier.networkLookup"));
     } finally {
       setScanning(false);
     }
@@ -126,7 +128,7 @@ export default function CashierTerminal({
     setNotice(null);
     addLog(
       "info",
-      `${manual ? "Looked up" : "Scanned"} ${s.name} (${s.id}) — balance ${formatMoney(s.balance)}`
+      `${manual ? t("cashier.lookedUp") : t("cashier.scanned")} ${s.name} (${s.id}) — ${t("cashier.balanceShort")} ${formatMoney(s.balance)}`
     );
   }
 
@@ -141,11 +143,11 @@ export default function CashierTerminal({
   async function submit() {
     if (!student || busy) return;
     if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
-      setNotice({ kind: "err", text: "Enter a valid amount, e.g. 12.50" });
+      setNotice({ kind: "err", text: t("cashier.invalidAmount") });
       return;
     }
     if (mode === "payment" && pin.length < 4) {
-      setNotice({ kind: "err", text: "Ask the student to enter their PIN." });
+      setNotice({ kind: "err", text: t("cashier.askPin") });
       return;
     }
 
@@ -167,34 +169,44 @@ export default function CashierTerminal({
       if (!res.ok) {
         const extra =
           data?.error?.code === "INSUFFICIENT_FUNDS"
-            ? ` (balance ${formatMoney(data.error.balance)})`
+            ? ` (${t("cashier.balanceShort")} ${formatMoney(data.error.balance)})`
             : "";
-        setNotice({ kind: "err", text: (data?.error?.message ?? "Request failed.") + extra });
-        addLog("err", `${mode === "topup" ? "Top-up" : "Payment"} failed: ${data?.error?.message ?? "?"}`);
+        setNotice({ kind: "err", text: (data?.error?.message ?? t("cashier.requestFailed")) + extra });
+        addLog(
+          "err",
+          `${mode === "topup" ? t("type.topup") : t("type.payment")} ${t("cashier.failedWord")}: ${data?.error?.message ?? "?"}`
+        );
         return; // key is intentionally kept: retrying the same intent dedupes server-side
       }
 
-      const t = data.transaction;
+      // RENAMED t -> tx so it can never shadow the translation function t()
+      const tx = data.transaction;
       if (data.duplicate) {
         setNotice({
           kind: "ok",
-          text: `Already processed earlier (tx #${t.id}) — no double charge. New balance ${formatMoney(t.balance_after)}.`,
+          text: `${t("cashier.dupAlready")} (tx #${tx.id}) — ${t("cashier.noDouble")} ${t("cashier.newBalance")} ${formatMoney(tx.balance_after)}.`,
         });
-        addLog("ok", `Replayed duplicate ${t.type} tx #${t.id} — no double charge.`);
+        addLog(
+          "ok",
+          `${t("cashier.replayLog")} ${tx.type === "topup" ? t("type.topup") : t("type.payment")} tx #${tx.id} — ${t("cashier.noDouble")}`
+        );
       } else {
         setNotice({
           kind: "ok",
-          text: `${t.type === "topup" ? "Top-up" : "Payment"} of ${formatMoney(t.amount)} recorded (tx #${t.id}). New balance ${formatMoney(t.balance_after)}.`,
+          text: `${formatMoney(tx.amount)} ${tx.type === "topup" ? t("type.topup") : t("type.payment")} ${t("cashier.recorded")} (tx #${tx.id}). ${t("cashier.newBalance")} ${formatMoney(tx.balance_after)}.`,
         });
-        addLog("ok", `${t.type} ${formatMoney(t.amount)} for ${student.name} — tx #${t.id}`);
+        addLog(
+          "ok",
+          `${tx.type === "topup" ? t("type.topup") : t("type.payment")} ${formatMoney(tx.amount)} ${student.name} ${t("cashier.forWord")} — tx #${tx.id}`
+        );
       }
-      setStudent({ ...student, balance: t.student.balance });
+      setStudent({ ...student, balance: tx.student.balance });
       idemRef.current =
         typeof crypto.randomUUID === "function" ? crypto.randomUUID() : String(Date.now());
       setPin("");
     } catch {
-      setNotice({ kind: "err", text: "Network error — safe to retry, the server deduplicates." });
-      addLog("err", "Network error during submission.");
+      setNotice({ kind: "err", text: t("cashier.networkRetry") });
+      addLog("err", t("cashier.networkSubmit"));
     } finally {
       setBusy(false);
     }
@@ -206,10 +218,10 @@ export default function CashierTerminal({
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left: scanning */}
       <section className="rounded-2xl bg-white p-6 shadow">
-        <h2 className="text-lg font-bold">1 · Scan student pass</h2>
+        <h2 className="text-lg font-bold">{t("cashier.step1")}</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Signed at {cashierName}&apos;s terminal. The server verifies the HMAC
-          signature before anything else happens.
+          {t("admin.signedIn")} <strong className="text-slate-700">{cashierName}</strong>.{" "}
+          {t("cashier.hmacNote")}
         </p>
         <div className="mt-4">
           <QRScanner onResult={handleScanText} paused={busy || scanning} />
@@ -217,13 +229,13 @@ export default function CashierTerminal({
 
         {allowManual && (
           <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className={labelCls}>Manual entry (dev mode)</p>
+            <p className={labelCls}>{t("cashier.manualEntry")}</p>
             <div className="mt-2 flex gap-2">
               <input
                 value={manualId}
                 onChange={(e) => setManualId(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && handleManualLookup()}
-                placeholder="e.g. S001"
+                placeholder={t("cashier.manualPlaceholder")}
                 className="w-40 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
               />
               <button
@@ -232,7 +244,7 @@ export default function CashierTerminal({
                 disabled={scanning}
                 className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
               >
-                Look up
+                {t("cashier.lookup")}
               </button>
             </div>
           </div>
@@ -243,7 +255,7 @@ export default function CashierTerminal({
       <section className="space-y-4">
         {!student ? (
           <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center text-slate-400">
-            Waiting for a scan…
+            {t("cashier.waiting")}
           </div>
         ) : (
           <>
@@ -268,12 +280,12 @@ export default function CashierTerminal({
                     {student.name}{" "}
                     {student.status !== "active" && (
                       <span className="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                        BLOCKED
+                        {t("cashier.blockedBadge")}
                       </span>
                     )}
                   </p>
                   <p className="text-sm text-slate-500">
-                    {student.id} · Year {student.year}
+                    {student.id} · {t("student.year")} {student.year}
                   </p>
                   <p className="mt-1 text-2xl font-extrabold text-blue-700 tabular-nums">
                     {formatMoney(student.balance)}
@@ -284,17 +296,14 @@ export default function CashierTerminal({
                   onClick={resetTerminal}
                   className="ml-auto self-start rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200"
                 >
-                  New
+                  {t("cashier.new")}
                 </button>
               </div>
-              <p className="mt-3 text-xs text-slate-400">
-                Verify the photo against the person in front of you before
-                continuing.
-              </p>
+              <p className="mt-3 text-xs text-slate-400">{t("cashier.verifyPhoto")}</p>
             </div>
 
             <div className="rounded-2xl bg-white p-6 shadow">
-              <h2 className="text-lg font-bold">2 · Choose transaction</h2>
+              <h2 className="text-lg font-bold">{t("cashier.step2")}</h2>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {(["topup", "payment"] as Mode[]).map((m) => (
                   <button
@@ -307,14 +316,14 @@ export default function CashierTerminal({
                         : "border-slate-200 text-slate-500 hover:border-slate-300"
                     }`}
                   >
-                    {m === "topup" ? "Top-up (cash in)" : "Payment (spend)"}
+                    {m === "topup" ? t("cashier.modeTopup") : t("cashier.modePayment")}
                   </button>
                 ))}
               </div>
 
               <div className="mt-4">
                 <label className={labelCls} htmlFor="amount">
-                  Amount
+                  {t("cashier.amount")}
                 </label>
                 <div className="mt-1 flex items-center rounded-xl border border-slate-300 px-4 focus-within:border-blue-500">
                   <span className="text-lg font-semibold text-slate-400">$</span>
@@ -331,13 +340,8 @@ export default function CashierTerminal({
 
               {mode === "payment" && (
                 <div className="mt-4 rounded-xl bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-700">
-                    3 · Student authorizes with PIN
-                  </p>
-                  <p className="mb-3 text-xs text-slate-500">
-                    Hand the device to the student. The PIN is verified against
-                    the stored bcrypt hash — it is never stored or logged.
-                  </p>
+                  <p className="text-sm font-semibold text-slate-700">{t("cashier.step3")}</p>
+                  <p className="mb-3 text-xs text-slate-500">{t("cashier.pinNote")}</p>
                   <PinPad value={pin} onChange={setPin} disabled={busy} />
                 </div>
               )}
@@ -363,10 +367,10 @@ export default function CashierTerminal({
                 }`}
               >
                 {busy
-                  ? "Processing…"
+                  ? t("cashier.processing")
                   : mode === "topup"
-                    ? `Top up ${Number.isFinite(amountMinor) && amountMinor > 0 ? formatMoney(amountMinor) : ""}`
-                    : `Charge ${Number.isFinite(amountMinor) && amountMinor > 0 ? formatMoney(amountMinor) : ""} (PIN required)`}
+                    ? `${t("cashier.topupBtn")} ${Number.isFinite(amountMinor) && amountMinor > 0 ? formatMoney(amountMinor) : ""}`
+                    : `${t("cashier.chargeBtn")} ${Number.isFinite(amountMinor) && amountMinor > 0 ? formatMoney(amountMinor) : ""} ${t("cashier.pinRequired")}`}
               </button>
             </div>
           </>
@@ -374,10 +378,10 @@ export default function CashierTerminal({
 
         <div className="rounded-2xl bg-white p-5 shadow">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Session log
+            {t("cashier.sessionLog")}
           </p>
           <ul className="mt-2 space-y-1 text-xs">
-            {log.length === 0 && <li className="text-slate-300">Nothing yet.</li>}
+            {log.length === 0 && <li className="text-slate-300">{t("cashier.nothingYet")}</li>}
             {log.map((l, i) => (
               <li
                 key={i}

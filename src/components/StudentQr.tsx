@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { useLang } from "@/lib/i18n/LanguageProvider";
 
 /**
  * Renders the signed QR payload as a PNG data-URL <img>.
@@ -9,6 +10,7 @@ import QRCode from "qrcode";
  * html2canvas when the ID card is exported.
  */
 export default function StudentQr({ payload }: { payload: string }) {
+  const { t } = useLang();
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function StudentQr({ payload }: { payload: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
-      alt="Signed payment QR code"
+      alt={t("student.qrAlt")}
       width={224}
       height={224}
       className="mx-auto mt-6 rounded-xl"

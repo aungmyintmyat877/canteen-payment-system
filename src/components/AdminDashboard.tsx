@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { formatMoney } from "@/lib/money";
+import { useLang } from "@/lib/i18n/LanguageProvider";
 
 interface Summary {
   today: Record<"topup" | "payment" | "refund", { count: number; total: number }>;
@@ -32,12 +33,6 @@ interface AuditItem {
   detail: string | null;
   created_at: string;
 }
-
-/* ────────────────────────────────────────────────────────────
-   Safe render helpers — API / auth ကနေ object ဝင်လာရင်တောင်
-   "Objects are not valid as a React child" error မတက်အောင် ကာကွယ်တယ်။
-   object ဆိုရင် JSON.stringify နဲ့ ပြလို့ ဘယ် data လဲ တန်းမြင်ရမယ်။
-   ──────────────────────────────────────────────────────────── */
 
 function txt(value: unknown): string {
   if (value === null || value === undefined) return "—";
@@ -94,6 +89,7 @@ async function getJson<T>(url: string): Promise<T> {
 }
 
 export default function AdminDashboard() {
+  const { t } = useLang();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [txs, setTxs] = useState<TxItem[]>([]);
   const [txTotal, setTxTotal] = useState(0);
@@ -124,16 +120,16 @@ export default function AdminDashboard() {
       setAudit(Array.isArray(a.items) ? a.items : []);
       setAuditTotal(num(a.total));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      setError(e instanceof Error ? e.message : t("admin.loadFailed"));
     }
-  }, [txType, txPage, auditPage]);
+  }, [txType, txPage, auditPage, t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function refund(txId: number) {
-    if (!confirm(`Refund transaction #${txId}? A new refund record will be created.`)) return;
+    if (!confirm(`${t("admin.refundConfirm")} #${txId}${t("admin.refundNote")}`)) return;
     setRefunding(txId);
     try {
       const res = await fetch("/api/admin/refund", {
@@ -143,14 +139,14 @@ export default function AdminDashboard() {
       });
       const data: unknown = await res.json();
       if (!res.ok) {
-        alert(pickErrorMessage(data, "Refund failed"));
+        alert(pickErrorMessage(data, t("admin.refundFailed")));
       } else {
         const payload = data as {
           transaction?: { amount?: unknown };
           student?: { balance?: unknown };
         };
         alert(
-          `Refunded ${money(payload.transaction?.amount)} — new balance ${money(payload.student?.balance)}.`
+          `${t("admin.refundedWord")} ${money(payload.transaction?.amount)} — ${t("admin.newBalance")} ${money(payload.student?.balance)}.`
         );
       }
       await load();
@@ -163,10 +159,9 @@ export default function AdminDashboard() {
     return <p className="rounded-2xl bg-red-50 border border-red-200 p-6 text-red-700">{error}</p>;
   }
   if (!summary) {
-    return <p className="animate-pulse text-slate-400">Loading dashboard…</p>;
+    return <p className="animate-pulse text-slate-400">{t("admin.loading")}</p>;
   }
 
-  // Data တွေ မရှိသေးရင် Error မတက်အောင် ကာကွယ်ခြင်း (Safe fallback)
   const emptyStat = { count: 0, total: 0 };
   const weekData = Array.isArray(summary.week) ? summary.week : [];
   const todayData = summary.today ?? {
@@ -190,56 +185,62 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Admin dashboard</h1>
+        <h1 className="text-xl font-bold">{t("admin.title")}</h1>
         <button type="button" onClick={load} className={btn}>
-          Refresh
+          {t("admin.refresh")}
         </button>
       </div>
 
-      {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <div className={card}>
-          <p className="text-xs font-semibold uppercase text-slate-400">Top-ups today</p>
+          <p className="text-xs font-semibold uppercase text-slate-400">{t("admin.topupsToday")}</p>
           <p className="mt-1 text-2xl font-extrabold text-emerald-600">
             {money(todayData.topup?.total)}
           </p>
-          <p className="text-xs text-slate-400">{txt(todayData.topup?.count ?? 0)} transactions</p>
+          <p className="text-xs text-slate-400">
+            {txt(todayData.topup?.count ?? 0)} {t("admin.transactions")}
+          </p>
         </div>
         <div className={card}>
-          <p className="text-xs font-semibold uppercase text-slate-400">Payments today</p>
+          <p className="text-xs font-semibold uppercase text-slate-400">{t("admin.paymentsToday")}</p>
           <p className="mt-1 text-2xl font-extrabold text-red-600">
             {money(todayData.payment?.total)}
           </p>
-          <p className="text-xs text-slate-400">{txt(todayData.payment?.count ?? 0)} transactions</p>
+          <p className="text-xs text-slate-400">
+            {txt(todayData.payment?.count ?? 0)} {t("admin.transactions")}
+          </p>
         </div>
         <div className={card}>
-          <p className="text-xs font-semibold uppercase text-slate-400">Refunds today</p>
+          <p className="text-xs font-semibold uppercase text-slate-400">{t("admin.refundsToday")}</p>
           <p className="mt-1 text-2xl font-extrabold text-blue-600">
             {money(todayData.refund?.total)}
           </p>
-          <p className="text-xs text-slate-400">{txt(todayData.refund?.count ?? 0)} transactions</p>
+          <p className="text-xs text-slate-400">
+            {txt(todayData.refund?.count ?? 0)} {t("admin.transactions")}
+          </p>
         </div>
         <div className={card}>
-          <p className="text-xs font-semibold uppercase text-slate-400">Student liabilities</p>
+          <p className="text-xs font-semibold uppercase text-slate-400">{t("admin.liabilities")}</p>
           <p className="mt-1 text-2xl font-extrabold text-slate-800">
             {money(studentData.liabilities)}
           </p>
-          <p className="text-xs text-slate-400">{txt(studentData.count ?? 0)} students</p>
+          <p className="text-xs text-slate-400">
+            {txt(studentData.count ?? 0)} {t("admin.students")}
+          </p>
         </div>
       </div>
 
-      {/* 7-day chart */}
       <div className={card}>
-        <p className="text-sm font-bold">Last 7 days</p>
+        <p className="text-sm font-bold">{t("admin.last7")}</p>
         {weekData.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-400">No activity in the past week.</p>
+          <p className="mt-3 text-sm text-slate-400">{t("admin.noActivity")}</p>
         ) : (
           <table className="mt-3 w-full text-sm">
             <thead className="text-xs uppercase text-slate-400">
               <tr>
-                <th className="py-1 text-left">Day</th>
-                <th className="py-1 text-left">Top-ups</th>
-                <th className="py-1 text-left">Payments</th>
+                <th className="py-1 text-left">{t("admin.day")}</th>
+                <th className="py-1 text-left">{t("admin.weekTopups")}</th>
+                <th className="py-1 text-left">{t("admin.weekPayments")}</th>
               </tr>
             </thead>
             <tbody>
@@ -277,24 +278,23 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Ledger + refunds */}
       <div className={card}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-bold">Ledger &amp; refunds</p>
+          <p className="text-sm font-bold">{t("admin.ledger")}</p>
           <div className="flex gap-1 text-xs">
-            {(["payment", "topup", "refund", "all"] as const).map((t) => (
+            {(["payment", "topup", "refund", "all"] as const).map((opt) => (
               <button
-                key={t}
+                key={opt}
                 type="button"
                 onClick={() => {
-                  setTxType(t);
+                  setTxType(opt);
                   setTxPage(1);
                 }}
-                className={`rounded-lg px-3 py-1.5 font-semibold capitalize ${
-                  txType === t ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                className={`rounded-lg px-3 py-1.5 font-semibold ${
+                  txType === opt ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                {t}
+                {t(`type.${opt}`)}
               </button>
             ))}
           </div>
@@ -304,31 +304,31 @@ export default function AdminDashboard() {
             <thead className="text-xs uppercase text-slate-400">
               <tr>
                 <th className="py-2 pr-3">#</th>
-                <th className="py-2 pr-3">When</th>
-                <th className="py-2 pr-3">Student</th>
-                <th className="py-2 pr-3">Type</th>
-                <th className="py-2 pr-3 text-right">Amount</th>
-                <th className="py-2 pr-3">Operator</th>
-                <th className="py-2 text-right">Action</th>
+                <th className="py-2 pr-3">{t("tx.time")}</th>
+                <th className="py-2 pr-3">{t("admin.student")}</th>
+                <th className="py-2 pr-3">{t("tx.type")}</th>
+                <th className="py-2 pr-3 text-right">{t("tx.amount")}</th>
+                <th className="py-2 pr-3">{t("admin.operator")}</th>
+                <th className="py-2 text-right">{t("admin.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {txs.map((t, i) => {
-                const amount = num(t.amount);
+              {txs.map((row, i) => {
+                const amount = num(row.amount);
                 return (
-                  <tr key={`${txt(t.id)}-${i}`}>
-                    <td className="py-2 pr-3 font-mono text-xs text-slate-400">{txt(t.id)}</td>
+                  <tr key={`${txt(row.id)}-${i}`}>
+                    <td className="py-2 pr-3 font-mono text-xs text-slate-400">{txt(row.id)}</td>
                     <td className="whitespace-nowrap py-2 pr-3 text-slate-500">
-                      {when(t.created_at)}
+                      {when(row.created_at)}
                     </td>
                     <td className="py-2 pr-3">
-                      {txt(t.student_name)}{" "}
-                      <span className="text-xs text-slate-400">({txt(t.student_id)})</span>
+                      {txt(row.student_name)}{" "}
+                      <span className="text-xs text-slate-400">({txt(row.student_id)})</span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className="capitalize">{txt(t.type)}</span>
-                      {t.refund_id ? (
-                        <span className="ml-1 text-xs text-blue-500">refunded</span>
+                      <span>{t(`type.${row.type}`)}</span>
+                      {row.refund_id ? (
+                        <span className="ml-1 text-xs text-blue-500">{t("tx.refunded")}</span>
                       ) : null}
                     </td>
                     <td
@@ -338,16 +338,16 @@ export default function AdminDashboard() {
                     >
                       {money(amount)}
                     </td>
-                    <td className="py-2 pr-3 text-slate-500">{txt(t.operator_id)}</td>
+                    <td className="py-2 pr-3 text-slate-500">{txt(row.operator_id)}</td>
                     <td className="py-2 text-right">
-                      {t.type === "payment" && !t.refund_id ? (
+                      {row.type === "payment" && !row.refund_id ? (
                         <button
                           type="button"
                           className={btn}
                           disabled={refunding !== null}
-                          onClick={() => refund(t.id)}
+                          onClick={() => refund(row.id)}
                         >
-                          {refunding === t.id ? "…" : "Refund"}
+                          {refunding === row.id ? "…" : t("type.refund")}
                         </button>
                       ) : null}
                     </td>
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
         </div>
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Page {txPage} of {txPages} · {txTotal} records
+            {t("admin.page")} {txPage} / {txPages} · {txTotal} {t("admin.records")}
           </span>
           <div className="flex gap-2">
             <button
@@ -368,7 +368,7 @@ export default function AdminDashboard() {
               onClick={() => setTxPage((p) => p - 1)}
               className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold disabled:opacity-40"
             >
-              ← Prev
+              {t("admin.prev")}
             </button>
             <button
               type="button"
@@ -376,25 +376,24 @@ export default function AdminDashboard() {
               onClick={() => setTxPage((p) => p + 1)}
               className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold disabled:opacity-40"
             >
-              Next →
+              {t("admin.next")}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Audit log */}
       <div className={card}>
-        <p className="text-sm font-bold">Audit log — who did what</p>
+        <p className="text-sm font-bold">{t("admin.auditTitle")}</p>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-slate-400">
               <tr>
-                <th className="py-2 pr-3">When</th>
-                <th className="py-2 pr-3">Actor</th>
-                <th className="py-2 pr-3">Role</th>
-                <th className="py-2 pr-3">Action</th>
-                <th className="py-2 pr-3">Entity</th>
-                <th className="py-2">Detail</th>
+                <th className="py-2 pr-3">{t("tx.time")}</th>
+                <th className="py-2 pr-3">{t("admin.operator")}</th>
+                <th className="py-2 pr-3">{t("admin.role")}</th>
+                <th className="py-2 pr-3">{t("admin.actions")}</th>
+                <th className="py-2 pr-3">{t("admin.entity")}</th>
+                <th className="py-2">{t("admin.detail")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -421,7 +420,7 @@ export default function AdminDashboard() {
         </div>
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Page {auditPage} of {auditPages} · {auditTotal} entries
+            {t("admin.page")} {auditPage} / {auditPages} · {auditTotal} {t("admin.entries")}
           </span>
           <div className="flex gap-2">
             <button
@@ -430,7 +429,7 @@ export default function AdminDashboard() {
               onClick={() => setAuditPage((p) => p - 1)}
               className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold disabled:opacity-40"
             >
-              ← Prev
+              {t("admin.prev")}
             </button>
             <button
               type="button"
@@ -438,7 +437,7 @@ export default function AdminDashboard() {
               onClick={() => setAuditPage((p) => p + 1)}
               className="rounded-lg bg-slate-100 px-3 py-1.5 font-semibold disabled:opacity-40"
             >
-              Next →
+              {t("admin.next")}
             </button>
           </div>
         </div>
