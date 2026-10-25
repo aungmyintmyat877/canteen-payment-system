@@ -148,7 +148,16 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
 "scanner.cameraHint": "Allow camera access, or use manual entry below.",
 // ─── Student QR ───
 "student.qrAlt": "Signed payment QR code",
-
+  "home.university": "University of Computer Studies, Taungoo",
+  "home.title": "Canteen Payment & Student ID System",
+  "home.subtitle": "Cashless payments with HMAC-signed QR codes, a locked and idempotent MySQL ledger, and printable digital student IDs.",
+  "home.loginBtn": "Login",
+  "home.studentsTitle": "Students",
+  "home.studentsDesc": "Check your balance, show your signed payment QR, download a printable student ID, and browse your full transaction history.",
+  "home.cashierTitle": "Cashier Terminal",
+  "home.cashierDesc": "Scan student QR codes with the camera, verify their photo, and accept cash or PIN-authorized payments — with double-charge protection.",
+  "home.adminTitle": "Admin Dashboard",
+  "home.adminDesc": "Daily summaries, a full audit trail, and safe refunds that never rewrite history.",
 
     "qr.title": "QR Scanner",
     "qr.hint": "Point the camera at the QR code",
@@ -157,10 +166,11 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
 
     "idcard.download": "Download Card",
     "idcard.valid": "VALID",
+    "login.backToLogin": "Back to login",
   },
 
   my: {
-    "login.title": "ဆိုင်းအင် ဝင်ရန်",
+    "login.title": "လော့အင် ဝင်ရန်",
     "login.subtitle": "ကျောင်းစားရုံ ငွေပေးချေမှု စနစ်",
     "login.id": "ID",
     "login.pin": "PIN",
@@ -312,5 +322,17 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
 
     "idcard.download": "ကဒ် ဒေါင်းလုဒ်",
     "idcard.valid": "သက်တမ်း",
+    "login.backToLogin": "Login စာမျက်နှာသို့ ပြန်သွားရန်",
+
+      "home.university": "ကွန်ပျူတာတက္ကသိုလ် (တောင်ငူ)",
+  "home.title": "စားသောက်ဆိုင် ငွေပေးချေမှုနှင့် ကျောင်းသားမှတ်ပုံတင်ကဒ် စနစ်",
+  "home.subtitle": "HMAC လက်မှတ်ထိုး QR ကုဒ်များဖြင့် ငွေလက်ကိုင်မလိုသော ပေးချေမှုစနစ်၊ လုံခြုံပြီး နှစ်ခါထပ်မဖြစ်နိုင်သော MySQL မှတ်တမ်း၊ ပရင့်ထုတ်နိုင်သော ဒစ်ဂျစ်တယ် ကျောင်းသားကဒ်များ။",
+   "home.loginBtn": "လော့ဂ်အင် ဝင်ရန်",
+  "home.studentsTitle": "ကျောင်းသားများ",
+  "home.studentsDesc": "လက်ကျန်ငွေ ကြည့်ပါ၊ လက်မှတ်ထိုးထားသော ပေးချေမှု QR ကို ပြပါ၊ ပရင့်ထုတ်နိုင်သော ကျောင်းသားကဒ် ဒေါင်းလုဒ်လုပ်ပါ၊ ငွေပေးချေမှု မှတ်တမ်းအားလုံး လိုက်ကြည့်ပါ။",
+  "home.cashierTitle": "ကတ်ခ်ျာ တာမီနယ်",
+  "home.cashierDesc": "ကျောင်းသား QR ကုဒ်များကို ကင်မရာဖြင့် စကင်န်ဖတ်ပါ၊ ပုံနှင့် တိုက်ဆိုင် စစ်ဆေးပါ၊ ငွေသား သို့မဟုတ် PIN အတည်ပြု ပေးချေမှုများ လက်ခံပါ — နှစ်ခါပေးချေမှုမျိုး မဖြစ်စေရန် ကာကွယ်ထားပါတယ်။",
+  "home.adminTitle": "အက်ဒမင် ဒက်ရှ်ဘုတ်",
+  "home.adminDesc": "နေ့စဉ် အနှစ်ချုပ် အချက်အလက်များ၊ စောင့်ကြည့်မှတ်တမ်း အပြည့်အစုံ၊ မှတ်တမ်းကို မထိခိုက်စေဘဲ လုံခြုံစွာ ငွေပြန်အမ်းနိုင်ခြေ။",
   },
 };

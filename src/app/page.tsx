@@ -1,69 +1,65 @@
 import Link from "next/link";
-import { requireActiveStudent } from "@/lib/auth";
-import { buildQrPayload } from "@/lib/qr";
-import { formatMoney } from "@/lib/money";
-import StudentQr from "@/components/StudentQr";
+import { redirect } from "next/navigation";
+import { getSession, homeFor } from "@/lib/auth";
 import T from "@/lib/i18n/T";
+import LanguageToggle from "@/lib/i18n/LanguageToggle";
+
+// STEP 1 က ကူးထားတဲ့ LanguageToggle import line ကို ဒီအောက်မှာ paste ပါ
 
 export const dynamic = "force-dynamic";
 
-export default async function StudentHomePage() {
-  let student;
-  try {
-    student = await requireActiveStudent();
-  } catch {
-    return (
-      <p className="rounded-2xl bg-red-50 border border-red-200 p-6 text-red-700">
-        <T k="student.blocked" />
-      </p>
-    );
+export default async function HomePage() {
+  const session = await getSession();
+
+  // login ဝင်ထားပြီးသားဆိုရင် ကိုယ့် portal ဆီ တန်းပို့မယ်
+  if (session) {
+    if (session.role === "student") redirect("/student");
+    redirect(homeFor(session.role));
   }
 
-  const payload = buildQrPayload(student.id, student.qr_secret);
-
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <section className="flex flex-col rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white shadow-lg">
-        <p className="text-sm font-medium text-blue-200">
-          <T k="student.balance" />
-        </p>
-        <p className="mt-1 text-5xl font-extrabold tracking-tight">
-          {formatMoney(student.balance)}
-        </p>
-        <p className="mt-8 text-lg font-semibold">{student.name}</p>
-        <p className="text-sm text-blue-200">
-          {student.id} · <T k="student.year" /> {student.year}
-          {student.major ? ` · ${student.major}` : ""}
-        </p>
-
-        <div className="mt-auto flex gap-3 pt-8">
-          <Link
-            href="/student/id-card"
-            className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-          >
-            <T k="student.idcard" />
-          </Link>
-          <Link
-            href="/student/transactions"
-            className="rounded-xl border border-white/40 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-          >
-            <T k="student.history" />
-          </Link>
+    <main className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white">
+      <div className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
+        <div className="flex justify-end">
+          <LanguageToggle />
         </div>
-      </section>
 
-      <section className="rounded-2xl bg-white p-8 text-center shadow">
-        <h2 className="text-lg font-bold">
-          <T k="student.myqr" />
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          <T k="student.qrHint" />
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-blue-200">
+          <T k="home.university" />
         </p>
-        <StudentQr payload={payload} />
-        <p className="mt-4 text-xs text-slate-400">
-          <T k="student.qrNote" />
+
+        <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">
+          <T k="home.title" />
+        </h1>
+
+        <p className="mt-4 max-w-2xl text-lg text-blue-100">
+          <T k="home.subtitle" />
         </p>
-      </section>
-    </div>
+
+        <Link
+          href="/login"
+          className="mt-8 inline-block rounded-2xl bg-white px-8 py-4 text-lg font-bold text-blue-800 shadow-lg transition hover:bg-blue-50"
+        >
+          <T k="home.loginBtn" />
+        </Link>
+
+        <div className="mt-16 grid gap-6 sm:grid-cols-3">
+          <section className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
+            <h2 className="text-xl font-bold"><T k="home.studentsTitle" /></h2>
+            <p className="mt-3 text-blue-100"><T k="home.studentsDesc" /></p>
+          </section>
+
+          <section className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
+            <h2 className="text-xl font-bold"><T k="home.cashierTitle" /></h2>
+            <p className="mt-3 text-blue-100"><T k="home.cashierDesc" /></p>
+          </section>
+
+          <section className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
+            <h2 className="text-xl font-bold"><T k="home.adminTitle" /></h2>
+            <p className="mt-3 text-blue-100"><T k="home.adminDesc" /></p>
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }
