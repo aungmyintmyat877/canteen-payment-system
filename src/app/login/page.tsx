@@ -39,8 +39,13 @@ export default function LoginPage() {
         router.refresh();
         return;
       }
+const errorMessage = 
+  typeof data?.error === 'string' ? data.error : 
+  typeof data?.message === 'string' ? data.message : 
+  (data?.error as any)?.message || t("login.networkError");
 
-      setError(data?.error || data?.message || t("login.networkError"));
+setError(String(errorMessage));
+
       setBusy(false);
     } catch {
       setError(t("login.networkError"));
