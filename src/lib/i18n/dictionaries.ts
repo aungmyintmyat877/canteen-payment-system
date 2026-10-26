@@ -35,6 +35,10 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     "student.qrNote": "The QR encodes your student ID plus an HMAC-SHA256 signature - it cannot be forged without the server secret.",
     "nav.home": "Home",
     "nav.studentPortal": "Student Portal",
+      "student.debt": "In debt",
+  "student.debtHint": "Your next top-up will automatically repay this debt.",
+  "student.debtAllowance": "Remaining allowance",
+
 
     "tx.time": "Time",
     "tx.type": "Type",
@@ -99,6 +103,13 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     "cashier.charge": "Charge",
     "cashier.done": "Payment accepted",
     "cashier.insufficient": "Insufficient balance",
+    "cashier.cashierPinTitle": "Cashier PIN",
+"cashier.cashierPinNote": "Enter YOUR cashier PIN to authorize this top-up.",
+"cashier.askCashierPin": "Enter the cashier PIN first.",
+"cashier.wrongCashierPin": "Cashier PIN is incorrect. Top-up declined.",
+"cashier.debtBadge": "IN DEBT",
+"cashier.debtLimitHit": "This charge would go past the debt limit.",
+"cashier.debtAllowanceLeft": "Allowance left",
     
 // ─── Cashier terminal ───
 "cashier.header": "Cashier Terminal",
@@ -203,6 +214,9 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
     "student.qrNote": "ဤ QR တွင် ကျောင်းသားအမှတ်နှင့် HMAC-SHA256 လက်မှတ် ပါဝင်ပါသည် - server secret မရှိဘဲ လိမ်လည်းဖန်တီး၍ မရနိုင်ပါ။",
         "nav.home": "ပင်မ",
     "nav.studentPortal": "ကျောင်းသား Portal",
+      "student.debt": "အကြွေး",
+  "student.debtHint": "Top-up လုပ်လိုက်လျှင် အကြွေး အလိုအလျောက် ပြန်ပေးချေမည်။",
+  "student.debtAllowance": "ထပ်ခံနိုင်သော ပမာဏ",
 
     "tx.time": "အချိန်",
     "tx.type": "အမျိုးအစား",
@@ -308,6 +322,14 @@ export const dictionaries: Record<Lang, Record<string, string>> = {
 "cashier.nothingYet": "မရှိသေးပါ။",
 "cashier.lookedUp": "ရှာဖွေပြီး",
 "cashier.scanned": "စကင်န်ဖတ်ပြီး",
+"cashier.cashierPinTitle": "Cashier PIN",
+"cashier.cashierPinNote": "Top-up အတည်ပြုဖို့ ကိုယ့် Cashier PIN ကို ထည့်ပါ။",
+"cashier.askCashierPin": "Cashier PIN ကို အရင်ထည့်ပါ။",
+"cashier.wrongCashierPin": "Cashier PIN မှားနေပါတယ်။ Top-up လက်မခံပါ။",
+"cashier.debtBadge": "အကြွေး",
+"cashier.debtLimitHit": "ဒီ payment က အကြွေး ကန့်သတ်ချက် ကျော်သွားမယ်လို့ လက်မခံပါ။",
+"cashier.debtAllowanceLeft": "ထပ်ခံနိုင်တဲ့ ပမာဏ",
+
 // ─── QR scanner ───
 "scanner.start": "ကင်မရာ စတင်ရန်",
 "scanner.stop": "ကင်မရာ ရပ်ရန်",

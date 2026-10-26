@@ -28,9 +28,9 @@ export default async function HomePage() {
           <T k="home.university" />
         </p>
 
-        <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight sm:text-5xl">
-          <T k="home.title" />
-        </h1>
+        <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-snug sm:text-4xl md:text-5xl">
+  <T k="home.title" />
+</h1>
 
         <p className="mt-4 max-w-2xl text-lg text-blue-100">
           <T k="home.subtitle" />

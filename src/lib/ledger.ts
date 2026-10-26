@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { withTransaction, pool, asNumber, asString } from "./db";
 import { ApiError } from "./api";
 import { resolveStudentRef, qrSignature } from "./qr";
+import { DEBT_LIMIT_MINOR } from "./config";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 /**
@@ -252,11 +253,36 @@ export async function processTopup(input: {
   ref: Record<string, unknown>;
   amount: unknown;
   idempotencyKey: unknown;
+  operatorPin?: unknown;
   operator: Actor;
 }): Promise<TxResult> {
   const amount = assertAmount(input.amount);
   const key = assertIdempotencyKey(input.idempotencyKey);
-  const { studentId } = await resolveStudentRef(input.ref);
+    const { studentId } = await resolveStudentRef(input.ref);
+
+  // ---- Cashier PIN authorization (sudo-style) ----
+  const staffPin = asString(input.operatorPin);
+  if (!/^\d{4,8}$/.test(staffPin)) {
+    throw new ApiError(400, "BAD_STAFF_PIN", "Cashier PIN is required for top-up.");
+  }
+  const [staffRows] = await pool.execute<RowDataPacket[]>(
+    "SELECT pin_hash FROM staff WHERE id = ?",
+    [input.operator.id]
+  );
+  if (staffRows.length === 0) {
+    throw new ApiError(404, "OPERATOR_NOT_FOUND", "Operator account not found.");
+  }
+  const staffPinOk = await bcrypt.compare(staffPin, asString(staffRows[0].pin_hash));
+  if (!staffPinOk) {
+    await pool.execute(
+      `INSERT INTO audit_logs (actor_id, actor_role, action, entity, entity_id, detail)
+       VALUES (?, ?, 'topup_pin_failed', 'student', ?, ?)`,
+      [input.operator.id, input.operator.role, studentId, JSON.stringify({})]
+    );
+    throw new ApiError(401, "WRONG_STAFF_PIN", "Cashier PIN is incorrect. Top-up declined.");
+  }
+
+  // Fast path: this exact request was already committed — replay it.
 
   // Fast path: this exact request was already committed — replay it.
   if (await findTransactionByKey(key)) {
@@ -398,15 +424,17 @@ export async function processPayment(input: {
 
       verifyLockedStudentQr(student, input.ref);
 
-      const current = asNumber(student.balance);
-      if (current < amount) {
-        throw new ApiError(400, "INSUFFICIENT_FUNDS", "Insufficient balance for this payment.", {
+           const current = asNumber(student.balance);
+      const newBalance = current - amount;
+
+      // Debt rule: may go below zero, but never below -DEBT_LIMIT_MINOR.
+      if (newBalance < -DEBT_LIMIT_MINOR) {
+        throw new ApiError(400, "DEBT_LIMIT_EXCEEDED", "This payment exceeds the debt limit.", {
           balance: current,
           required: amount,
+          debt_limit: -DEBT_LIMIT_MINOR,
         });
       }
-
-      const newBalance = current - amount;
       await conn.execute(
         "UPDATE students SET balance = balance - ? WHERE id = ?",
         [amount, studentId]

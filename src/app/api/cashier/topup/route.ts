@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Top-up: body = { payload } (signed QR) | { studentId, manual: true },
- *         amount (minor units), idempotency_key.
- * Cashier-only per role separation.
+ *         amount (minor units), operator_pin (cashier's own PIN), idempotency_key.
+ * Cashier-only per role separation. Top-up requires cashier PIN authorization.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       ref: body,
       amount: body.amount,
       idempotencyKey: body.idempotency_key,
+      operatorPin: body.operator_pin,
       operator: { id: session.id, name: session.name, role: "cashier" },
     });
     return NextResponse.json({ ok: true, ...result });
