@@ -1,24 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* html5-qrcode injects its own video element — keep it neat */
-#qr-reader {
-  border: 1px dashed #cbd5e1;
-  border-radius: 0.75rem;
-  padding: 4px;
-  background: #f8fafc;
-  overflow: hidden;
+/* globals.css သို့မဟုတ် tailwind.config.ts ထဲတွင် */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
-#qr-reader video {
-  width: 100% !important;
-  border-radius: 0.6rem;
-}
-#qr-reader__dashboard_section_swaplink {
-  display: none;
-}
-/* Myanmar font support */
-html[lang="my"] body {
-  font-family: "Myanmar Text", "Noto Sans Myanmar", "Padauk",
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+.animate-marquee {
+  animation: marquee 25s linear infinite;
 }
